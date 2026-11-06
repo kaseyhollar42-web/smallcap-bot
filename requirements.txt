@@ -1,0 +1,5 @@
+alpaca-py>=0.45
+pandas>=2.0
+pyyaml>=6.0
+python-dotenv>=1.0
+matplotlib>=3.7
