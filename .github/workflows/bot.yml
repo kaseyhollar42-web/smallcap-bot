@@ -1,0 +1,60 @@
+name: Small-Cap Bot
+
+on:
+  schedule:
+    # Every hour on weekdays, ~8:17 AM to 4:17 PM Eastern (GitHub uses UTC).
+    # Runs outside market hours just check the floor and exit.
+    - cron: "17 13-21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "What to run"
+        type: choice
+        default: status
+        options: [status, dry-run, run, backtest, resume]
+
+concurrency:
+  group: smallcap-bot
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      I_UNDERSTAND_THIS_IS_REAL_MONEY: ${{ vars.I_UNDERSTAND_THIS_IS_REAL_MONEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run
+        run: |
+          TASK="${{ github.event.inputs.task || 'run' }}"
+          echo "Task: $TASK"
+          case "$TASK" in
+            status)   python bot.py --status ;;
+            dry-run)  python bot.py --dry-run ;;
+            run)      python bot.py ;;
+            resume)   python bot.py --resume ;;
+            backtest) python backtest.py --plot | tee backtest.txt ;;
+          esac
+      - name: Show backtest results on the summary page
+        if: github.event.inputs.task == 'backtest'
+        run: |
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat backtest.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results
+          path: |
+            bot.log
+            backtest.png
+            backtest.txt
+          if-no-files-found: ignore
