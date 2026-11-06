@@ -1,0 +1,116 @@
+# ==================================================================
+#  Small-Cap Momentum Bot settings. Edit here; no code changes needed.
+# ==================================================================
+
+# true = Alpaca paper trading (fake money). Leave it until you've watched it for weeks.
+paper: true
+
+# ---------- money ----------
+budget: 100000               # how much the bot is allowed to trade with (the full paper account)
+
+# What your Alpaca paper account STARTED with. New Alpaca paper accounts
+# start at 100000. If yours started with a different amount, set this AND
+# `budget` to that amount. (If budget is smaller than this, the bot leaves the
+# difference untouched and only plays with `budget` dollars.)
+account_start_value: 100000
+
+# ---------- the safety floor ----------
+floor: 20000                 # if the bot's money falls to this, it stops (20% of budget)
+on_floor: sell_all           # sell_all = sell everything & stop  |  stop_buying = keep positions, no new buys
+# Once stopped, it stays stopped until you run "resume" (see README).
+
+# ---------- what it can buy ----------
+# Hand-picked small/mid-cap growth names from Nov 2026 research (Motley Fool,
+# NerdWallet, MarketBeat, U.S. News, space/quantum coverage). The bot doesn't
+# buy these blindly: each day it ranks them and only buys the strongest.
+watchlist:
+  # AI chips, photonics & AI software
+  - AEHR   # Aehr Test Systems - wafer test for AI chips
+  - PLAB   # Photronics - photomasks
+  - AIP    # Arteris - chip interconnect IP
+  - POET   # POET Technologies - optical chips for AI data links
+  - QUIK   # QuickLogic - programmable chips, defense/edge AI
+  - AXTI   # AXT - semiconductor substrates
+  - MXL    # MaxLinear - connectivity chips
+  - INOD   # Innodata - AI training data
+  - SOUN   # SoundHound AI - voice AI
+  - BBAI   # BigBear.ai - government AI analytics
+  - PLPC   # Preformed Line Products - grid hardware for AI power demand
+  # AI data centers
+  - IREN   # IREN - AI cloud / data centers
+  - APLD   # Applied Digital - AI data centers
+  # Quantum computing
+  - IONQ   # IonQ
+  - QBTS   # D-Wave Quantum
+  - RGTI   # Rigetti Computing
+  - QNT    # Quantinuum (IPO June 2026)
+  # Space
+  - ASTS   # AST SpaceMobile - satellite-to-phone
+  - LUNR   # Intuitive Machines - lunar
+  - PL     # Planet Labs - earth imaging
+  - RDW    # Redwire - space infrastructure
+  - BKSY   # BlackSky - earth imaging
+  - SPIR   # Spire Global - satellite data
+  - FLY    # Firefly Aerospace - launch
+  - KRMN   # Karman - space & defense components
+  - VOYG   # Voyager Technologies - space stations/defense
+  # Software, ad-tech & robotics (Motley Fool small-cap picks)
+  - MGNI   # Magnite - CTV ads
+  - PUBM   # PubMatic - ad-tech
+  - AMPL   # Amplitude - product analytics
+  - MITK   # Mitek - AI identity verification
+  - HLIT   # Harmonic - broadband software
+  - INSG   # Inseego - 5G
+  - SERV   # Serve Robotics - delivery robots (very speculative)
+  # Biotech & genomics tools (top 1-year small-cap performers)
+  - TXG    # 10x Genomics
+  - TWST   # Twist Bioscience
+  - CDNA   # CareDx
+  - ERAS   # Erasca
+  - IOVA   # Iovance
+  - RXRX   # Recursion - AI drug discovery
+
+# Daily scanner: also considers today's top gainers & most-active stocks.
+# They still have to pass every filter below before the bot will buy.
+scanner:
+  enabled: true
+  top_gainers: 20
+  most_active: 20
+  max_dollar_volume: 1500000000   # skip giants/ETFs that trade > $1.5B a day (keeps it small-cap)
+  exclude: [SPY, QQQ, IWM, DIA, TQQQ, SQQQ, SOXL, SOXS, TSLL, NVDL, UVXY, VXX, TLT, GLD, SLV]
+
+# ---------- filters (a stock must pass ALL of these) ----------
+filters:
+  min_price: 3                    # no penny stocks
+  min_dollar_volume: 5000000      # trades at least $5M a day on average (can get in and out)
+  min_history_days: 63            # at least ~3 months of trading history
+
+# ---------- how stocks are ranked ----------
+momentum:
+  # score = weighted mix of 1-month, 3-month and 6-month price gains
+  weights: {r21: 0.3, r63: 0.5, r126: 0.2}
+  require_positive: true          # must be up over the last 3 months to be bought
+  buy_rank: 5                     # only buy stocks ranked in the top 5
+  hold_rank: 15                   # sell a holding once it falls out of the top 15
+
+# ---------- position sizing ----------
+positions:
+  max_positions: 5                # at most 5 stocks at once (~$20,000 each)
+  max_position_pct: 25            # never more than 25% of the bot's money in one stock
+  min_order: 5                    # skip orders smaller than $5
+
+# ---------- risk ----------
+risk:
+  stop_loss_pct: 15               # sell any stock that falls 15% below what we paid
+  daily_loss_limit_pct: 15        # if the bot is down 15% today, no new buys today
+  trade_after: "10:00"            # (ET) no buying in the chaotic first 30 minutes
+
+# Market data: "sip" = full market data (free on Alpaca for past days).
+# Falls back to "iex" automatically if your plan doesn't allow it.
+data_feed: sip
+
+# ---------- backtest ----------
+backtest:
+  years: 2
+  slippage_pct: 0.2               # small caps cost more to trade; assume 0.2% per trade
+  benchmark: IWM                  # Russell 2000 small-cap index fund
